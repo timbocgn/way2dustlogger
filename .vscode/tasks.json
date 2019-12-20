@@ -1,0 +1,49 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558 
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "IDF build of the current project",
+            "command": "source ~/.zshrc ; idf.py build",
+            "args": [
+            ],
+            "options": {
+                "cwd": "${fileDirname}/.."
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
+        },
+        {
+            "type": "shell",
+            "label": "IDF flash the current project",
+            "command": "source ~/.zshrc ; idf.py -p /dev/cu.SLAB_USBtoUART flash",
+            "args": [
+            ],
+            "options": {
+                "cwd": "${fileDirname}/.."
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
+        },
+        {
+            "type": "shell",
+            "label": "IDF monitor the current project",
+            "command": "source ~/.zshrc ; idf.py -p /dev/cu.SLAB_USBtoUART monitor",
+            "args": [
+            ],
+            "options": {
+                "cwd": "${fileDirname}/.."
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "test"
+        }
+      ]
+}
