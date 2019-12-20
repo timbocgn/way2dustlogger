@@ -1,0 +1,74 @@
+menu "ESP Temp Logger Configuration"
+
+    config PRODUCT_NAME
+        string "Product Name"
+        default "way2TempLogger"
+        help
+            Specify how your product should be called
+
+    config TEMP_SENSOR_CNT
+        int "Number of SHT15 sensors"
+        range 1 3
+        default 2
+        help
+            Specify the number of SHT15 sensors connected to your ESP32
+
+    config TEMP_SENSOR1_SCLK_GPIO
+        int "SCLK GPIO for sensor 1"
+        range 0 34
+        default 26
+        help
+            Sensor 1: SCLK connected to GPIO...
+
+   config TEMP_SENSOR1_DATA_GPIO
+        int "DATA GPIO for sensor 1"
+        range 0 34
+        default 25
+        help
+            Sensor 1: DATA connected to GPIO...
+
+   config TEMP_SENSOR2_SCLK_GPIO
+        int "SCLK GPIO for sensor 2"
+        range 0 34
+        default 17
+        help
+            Sensor 2: SCLK connected to GPIO...
+
+   config TEMP_SENSOR2_DATA_GPIO
+        int "DATA GPIO for sensor 2"
+        range 0 34
+        default 16
+        help
+            Sensor 2: DATA connected to GPIO...
+
+    config TEMP_SENSOR3_SCLK_GPIO
+        int "SCLK GPIO for sensor 3"
+        range 0 34
+        default 0
+        help
+            Sensor 3: SCLK connected to GPIO...
+
+   config TEMP_SENSOR3_DATA_GPIO
+        int "DATA GPIO for sensor 3"
+        range 0 34
+        default 0
+        help
+            Sensor 2: DATA connected to GPIO...
+
+    config BOOTSTRAP_GPIO
+        int "Bootstrap GPIO number"
+        range 0 39
+        default 35
+        help
+            GPIO number (IOxx) to put the device into AP configuration mode. 
+
+
+    config INFOLED_GPIO
+        int "Error LED GPIO number"
+        range 0 39
+        default 2
+        help
+            GPIO number (IOxx) where the LED is connected to. 
+            
+            
+endmenu
