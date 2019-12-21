@@ -325,7 +325,7 @@ void app_main()
 
         g_ConfigManager.SetIntValue(CFMGR_BOOTSTRAP_DONE    ,1);
         g_ConfigManager.SetStringValue(CFMGR_WIFI_SSID      ,"Timbo_WLAN17_2G");
-        g_ConfigManager.SetStringValue(CFMGR_WIFI_PASSWORD  ,"Adjust1234Hugendubel2008");
+        g_ConfigManager.SetStringValue(CFMGR_WIFI_PASSWORD  ,"");
         g_ConfigManager.SetStringValue(CFMGR_DEVICE_NAME    ,"TimDevDevice");
 
 #endif
