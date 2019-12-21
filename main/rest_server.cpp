@@ -373,6 +373,12 @@ static esp_err_t config_get_handler(httpd_req_t *req)
     cJSON_AddStringToObject(root, CFMGR_WIFI_PASSWORD,  g_ConfigManager.GetStringValue(CFMGR_WIFI_PASSWORD).c_str());
     cJSON_AddStringToObject(root, CFMGR_DEVICE_NAME,    g_ConfigManager.GetStringValue(CFMGR_DEVICE_NAME).c_str());
 
+    cJSON_AddStringToObject(root, CFMGR_MQTT_SERVER,    g_ConfigManager.GetStringValue(CFMGR_MQTT_SERVER).c_str());
+    cJSON_AddNumberToObject(root, CFMGR_MQTT_PORT,      g_ConfigManager.GetIntValue(CFMGR_MQTT_PORT));
+    cJSON_AddStringToObject(root, CFMGR_MQTT_TOPIC,     g_ConfigManager.GetStringValue(CFMGR_MQTT_TOPIC).c_str());
+    cJSON_AddNumberToObject(root, CFMGR_MQTT_TIME,      g_ConfigManager.GetIntValue(CFMGR_MQTT_TIME));
+    cJSON_AddNumberToObject(root, CFMGR_MQTT_ENABLE,    g_ConfigManager.GetIntValue(CFMGR_MQTT_ENABLE));
+
     // --- now create JSON and send back
     
     const char *sys_info = cJSON_Print(root);
@@ -381,6 +387,63 @@ static esp_err_t config_get_handler(httpd_req_t *req)
     free((void *)sys_info);
     cJSON_Delete(root);
     
+    return ESP_OK;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+esp_err_t ProcessJsonString(cJSON *f_root,const char *f_name, bool f_onlysetifnotempty = false)
+{
+    cJSON *l_js = cJSON_GetObjectItem(f_root, f_name);
+
+    if (!l_js)
+    {
+        ESP_LOGE(REST_TAG, "Config %s not found", f_name);
+        return ESP_FAIL;
+    }
+
+    const char *l_s = l_js->valuestring;
+    if (!l_s)
+    {
+        ESP_LOGE(REST_TAG, "Config %s is null", f_name);
+        return ESP_FAIL;
+        
+    }
+
+    // --- if flag is set and string is empty - do noting
+
+    if (f_onlysetifnotempty && strlen(l_s) == 0)
+    {
+        ESP_LOGI(REST_TAG, "Config %s empty - not set!", f_name);
+        return ESP_OK;
+    }
+
+    // --- now tell the config mgr
+
+    g_ConfigManager.SetStringValue(f_name,SanetizedString(l_s));
+    ESP_LOGI(REST_TAG, "Config %s, value '%s'", f_name,l_s);
+
+    return ESP_OK;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+esp_err_t ProcessJsonInt(cJSON *f_root,const char *f_name)
+{
+    cJSON *l_js = cJSON_GetObjectItem(f_root, f_name);
+
+    if (!l_js)
+    {
+        ESP_LOGE(REST_TAG, "Config %s not found", f_name);
+        return ESP_FAIL;
+    }
+
+    // --- now tell the config mgr
+
+    g_ConfigManager.SetIntValue(f_name,l_js->valueint);
+    ESP_LOGI(REST_TAG, "Config %s, value '%d'", f_name,l_js->valueint);
+
     return ESP_OK;
 }
 
@@ -422,27 +485,16 @@ static esp_err_t config_post_handler(httpd_req_t *req)
     cJSON *root = cJSON_Parse(buf);
     
     // --- set config to config mgr
-   
-    const char *f_s = cJSON_GetObjectItem(root, CFMGR_WIFI_SSID)->valuestring;
-    g_ConfigManager.SetStringValue(CFMGR_WIFI_SSID,SanetizedString(f_s));
-    ESP_LOGI(REST_TAG, "Config %s, value '%s'", CFMGR_WIFI_SSID,f_s);
 
-    // --- only set the password if the user supplied one!
+    ProcessJsonString(root,CFMGR_WIFI_SSID);
+    ProcessJsonString(root,CFMGR_WIFI_PASSWORD,true);
+    ProcessJsonString(root,CFMGR_DEVICE_NAME);  
+    ProcessJsonString(root,CFMGR_MQTT_SERVER);
+    ProcessJsonString(root,CFMGR_MQTT_TOPIC);
 
-    f_s = cJSON_GetObjectItem(root, CFMGR_WIFI_PASSWORD)->valuestring;
-    if (strlen(f_s) != 0)
-    {
-        g_ConfigManager.SetStringValue(CFMGR_WIFI_PASSWORD,SanetizedString(f_s));
-        ESP_LOGI(REST_TAG, "Wifi password has been set");
-    }
-    else
-    {
-        ESP_LOGI(REST_TAG, "Wifi password not supplied - leave as is");
-    }
-  
-    f_s = cJSON_GetObjectItem(root, CFMGR_DEVICE_NAME)->valuestring;
-    g_ConfigManager.SetStringValue(CFMGR_DEVICE_NAME,SanetizedString(f_s));
-    ESP_LOGI(REST_TAG, "Config %s, value '%s'", CFMGR_DEVICE_NAME,f_s);
+    ProcessJsonInt(root,CFMGR_MQTT_PORT);
+    ProcessJsonInt(root,CFMGR_MQTT_TIME);
+    ProcessJsonInt(root,CFMGR_MQTT_ENABLE);
 
     // --- flag now
     

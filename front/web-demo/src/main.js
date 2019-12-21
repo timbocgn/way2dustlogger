@@ -6,6 +6,7 @@ import App from './App.vue'
 import router from './router'
 import axios from 'axios'
 import store from './store'
+import VueTheMask from 'vue-the-mask'
 
 Vue.config.productionTip = false
 
@@ -21,6 +22,7 @@ axios.interceptors.response.use(response => {
 })*/
 
 Vue.prototype.$ajax = axios
+Vue.use(VueTheMask)
 
 new Vue({
   vuetify,
