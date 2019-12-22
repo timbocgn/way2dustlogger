@@ -1,11 +1,17 @@
 /*
+    --------------------------------------------------------------------------------
 
-ESP32 IDF SHT1x communication library
-By:      Tim Hagemann (tim@way2.net)
-Date:    26 November 2019
-License: CC BY-SA v3.0 - http://creativecommons.org/licenses/by-sa/3.0/
+    ESPTempLogger       
+    
+    ESP32 based IoT Device for temperature logging featuring an MQTT client and 
+    REST API acess.
+    
+	ESP32 IDF SHT1x communication library
+	By:      Tim Hagemann (tim@way2.net)
+	Date:    26 November 2019
+	License: CC BY-SA v3.0 - http://creativecommons.org/licenses/by-sa/3.0/
 
-This is a derivative work based on:
+	This is a derivative work based on:
 
 	Raspberry Pi SHT1x communication library.
 	By:      John Burns (www.john.geek.nz)
@@ -21,6 +27,28 @@ This is a derivative work based on:
 		Date: 04/04/2011
 		Source: http://www.theniceguy.net/2722
 		License: Unknown - Attempts have been made to contact the author
+    --------------------------------------------------------------------------------
+
+    Copyright (c) 2019 Tim Hagemann / way2.net Services
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+    --------------------------------------------------------------------------------
 */
 
 ////////////////////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,160 @@
+{
+	"info": {
+		"_postman_id": "00405327-8dd3-4879-b447-ae2b389e0e1e",
+		"name": "ESP",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "192.168.1.67/api/v1/config",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "192.168.1.67/api/v1/config",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"67"
+					],
+					"path": [
+						"api",
+						"v1",
+						"config"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "192.168.1.67/api/v1/config",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json;charset=utf-8",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"Bootstrap_Done\": 1,\n\t\"Wifi_SSID\": \"<script>alert(document.cookie);</script>\",\n\t\"Wifi_Password\": \"wdqwdwdqdwdwd\",\n\t\"Device_Name\": \"SupaChecka\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "192.168.1.67/api/v1/config",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"67"
+					],
+					"path": [
+						"api",
+						"v1",
+						"config"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "192.168.1.67/api/v1/apscan",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "192.168.1.67/api/v1/apscan",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"67"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apscan"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "192.168.1.67/api/v1/temp/1",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "192.168.1.67/api/v1/temp/1",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"67"
+					],
+					"path": [
+						"api",
+						"v1",
+						"temp",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "192.168.1.67/api/v1/sensorcnt",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "192.168.1.67/api/v1/sensorcnt",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"67"
+					],
+					"path": [
+						"api",
+						"v1",
+						"sensorcnt"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "192.168.1.67/api/v1/temp/2",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "192.168.1.67/api/v1/temp/2",
+					"host": [
+						"192",
+						"168",
+						"1",
+						"67"
+					],
+					"path": [
+						"api",
+						"v1",
+						"temp",
+						"2"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
