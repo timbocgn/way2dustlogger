@@ -36,8 +36,6 @@
             <br>
             <v-text-field v-model="mqtt_server" :disabled="!mqtt_enable" :counter="200" label="MQTT Server" required dense></v-text-field>
             <br>
-            <v-text-field v-model="mqtt_port" :disabled="!mqtt_enable" :rules="[rules.port]" v-mask="'#####'" :counter="5" label="MQTT Port" required dense></v-text-field>
-            <br>
             <v-text-field v-model="mqtt_topic" :disabled="!mqtt_enable" :counter="200" label="MQTT Base Topic" required dense></v-text-field>
             <br>
             <v-text-field v-model="mqtt_time" :disabled="!mqtt_enable" v-mask="'#####'" :rules="[rules.time]" suffix="seconds" :counter="5" label="Send MQTT post every ... seconds" required dense></v-text-field>
@@ -77,7 +75,6 @@ export default {
         wifi_pass: '',
         mqtt_enable: false,
         mqtt_server: '',
-        mqtt_port: '',
         mqtt_topic: '',
         mqtt_time: '',
         errtext: '',
@@ -142,7 +139,6 @@ export default {
             Device_Name: this.device_name,
             mqtt_enable: this.mqtt_enable ? 1 : 0,
             mqtt_server: this.mqtt_server,
-            mqtt_port: parseInt(this.mqtt_port, 10),
             mqtt_topic: this.mqtt_topic,
             mqtt_time: parseInt(this.mqtt_time, 10),
         },{timeout: 10000}
@@ -173,7 +169,6 @@ export default {
             this.device_name  = data.data.Device_Name;
             this.wifi_name    = data.data.Wifi_SSID;
             this.mqtt_server  = data.data.mqtt_server;
-            this.mqtt_port    = data.data.mqtt_port;
             this.mqtt_topic   = data.data.mqtt_topic;
             this.mqtt_time    = data.data.mqtt_time;
             this.mqtt_enable  = data.data.mqtt_enable == 1 ? true : false;
@@ -184,4 +179,3 @@ export default {
 
 };
 </script>
-

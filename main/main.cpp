@@ -62,10 +62,6 @@
 
 #define CONFIG_EXAMPLE_WEB_MOUNT_POINT "/www"
 
-// --- nice for developing purposes
-
-#define xxUSE_DEFAULT_BOOTSTRAP 
-
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // --- these are our sensors (wrapped by a manager doing some calculation)
@@ -350,17 +346,19 @@ void app_main()
 
         g_InfoManager.SetMode(InfoMode_Bootstrap);
 
-#ifdef USE_DEFAULT_BOOTSTRAP
+        // ---- default values
+
+        if (g_ConfigManager.GetStringValue(CFMGR_DEVICE_NAME).length() == 0)
+            g_ConfigManager.SetStringValue(CFMGR_DEVICE_NAME,"IoTDevice");
+
+        if (g_ConfigManager.GetStringValue(CFMGR_MQTT_SERVER).length() == 0)
+            g_ConfigManager.SetStringValue(CFMGR_MQTT_SERVER,"mqtt://192.168.1.20");
         
-        ESP_LOGE(TAG, "Development - use Tim Std Config");
+        if (g_ConfigManager.GetStringValue(CFMGR_MQTT_TOPIC).length() == 0)
+            g_ConfigManager.SetStringValue(CFMGR_MQTT_TOPIC,"mytopic/templogger");
 
-        g_ConfigManager.SetIntValue(CFMGR_BOOTSTRAP_DONE    ,1);
-        g_ConfigManager.SetStringValue(CFMGR_WIFI_SSID      ,"Timbo_WLAN17_2G");
-        g_ConfigManager.SetStringValue(CFMGR_WIFI_PASSWORD  ,"");
-        g_ConfigManager.SetStringValue(CFMGR_DEVICE_NAME    ,"TimDevDevice");
-
-#endif
-
+        if (g_ConfigManager.GetIntValue(CFMGR_MQTT_TIME) == 0)
+            g_ConfigManager.SetIntValue(CFMGR_MQTT_TIME,60);
     }
     else
     {

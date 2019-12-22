@@ -401,7 +401,6 @@ static esp_err_t config_get_handler(httpd_req_t *req)
     cJSON_AddStringToObject(root, CFMGR_DEVICE_NAME,    g_ConfigManager.GetStringValue(CFMGR_DEVICE_NAME).c_str());
 
     cJSON_AddStringToObject(root, CFMGR_MQTT_SERVER,    g_ConfigManager.GetStringValue(CFMGR_MQTT_SERVER).c_str());
-    cJSON_AddNumberToObject(root, CFMGR_MQTT_PORT,      g_ConfigManager.GetIntValue(CFMGR_MQTT_PORT));
     cJSON_AddStringToObject(root, CFMGR_MQTT_TOPIC,     g_ConfigManager.GetStringValue(CFMGR_MQTT_TOPIC).c_str());
     cJSON_AddNumberToObject(root, CFMGR_MQTT_TIME,      g_ConfigManager.GetIntValue(CFMGR_MQTT_TIME));
     cJSON_AddNumberToObject(root, CFMGR_MQTT_ENABLE,    g_ConfigManager.GetIntValue(CFMGR_MQTT_ENABLE));
@@ -519,7 +518,6 @@ static esp_err_t config_post_handler(httpd_req_t *req)
     ProcessJsonString(root,CFMGR_MQTT_SERVER);
     ProcessJsonString(root,CFMGR_MQTT_TOPIC);
 
-    ProcessJsonInt(root,CFMGR_MQTT_PORT);
     ProcessJsonInt(root,CFMGR_MQTT_TIME);
     ProcessJsonInt(root,CFMGR_MQTT_ENABLE);
 
