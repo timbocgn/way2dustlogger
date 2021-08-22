@@ -10,39 +10,39 @@
 
           <tbody>   
             <template v-if="values.length != 0">
-              <div v-for="(item,index) in values" :key="index">
+              <template v-for="(item,index) in values">
 
-                  <tr>
+                  <tr :key="index">
                     <td>Sensor {{index+1}}</td>
                     <td class="grey--text">Value</td> 
                     <td class="grey--text">Unit</td> 
                   </tr>
 
                   <template v-if="loaded[index]==true">
-                      <tr>
-                        <td class="grey--text">Temperature</td> 
-                        <td>{{item.temp.toFixed(2)}}</td>
-                        <td class="grey--text"> °C</td> 
+                      <tr :key="index+1000">
+                        <td class="grey--text">Big particles</td> 
+                        <td>{{item.pm10.toFixed(2)}}</td>
+                        <td class="grey--text"> ppm (10 um)</td> 
                       </tr>
 
-                      <tr>
-                        <td class="grey--text">Relative Humidity</td> 
-                        <td>{{item.rh.toFixed(2)}}</td>
-                        <td class="grey--text"> %</td> 
+                      <tr :key="index+2000">
+                        <td class="grey--text">Medium particles</td> 
+                        <td>{{item.pm2.toFixed(2)}}</td>
+                        <td class="grey--text"> ppm (2.5 um)</td> 
                       </tr>
 
-                      <tr>
-                        <td class="grey--text">Dew Point</td> 
-                        <td>{{item.dp.toFixed(2)}}</td>
-                        <td class="grey--text"> °C</td> 
+                      <tr :key="index+3000">
+                        <td class="grey--text">Small particles</td> 
+                        <td>{{item.pm1.toFixed(2)}}</td>
+                        <td class="grey--text"> ppm (1 um)</td> 
                       </tr>                  
                   </template>
                   <template v-else>
-                      <tr>
-                        <td colspan=3 class="grey--text">Loading...</td> 
+                      <tr :key="index">
+                        <td colspan=3 class="grey--text" :key="index">Loading...</td> 
                       </tr>
                 </template>
-              </div>
+              </template>
             </template>
             <template v-else>
               <tr>
@@ -95,9 +95,9 @@ export default {
                 var urlidx = i+1;
     
                 this.$ajax
-                          .get("/api/v1/temp/" + urlidx.toString(),{ id: i})
+                          .get("/api/v1/air/" + urlidx.toString(),{ id: i})
                           .then(data => {
-                                          this.values[data.config.id] = {temp: data.data.temp, rh: data.data.rh, dp: data.data.dp};
+                                          this.values[data.config.id] = {pm1: data.data.pm1, pm2: data.data.pm2, pm10: data.data.pm10};
                                           this.loaded[data.config.id] = true;
                                           this.$forceUpdate();
 

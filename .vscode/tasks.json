@@ -20,7 +20,7 @@
         {
             "type": "shell",
             "label": "IDF flash the current project",
-            "command": "source ~/.zshrc ; idf.py -p /dev/usbserial-00E3A8A2 flash",
+            "command": "source ~/.zshrc ; idf.py -p /dev/tty.usbserial-00E3A8A2 flash",
             "args": [
             ],
             "options": {
@@ -34,7 +34,7 @@
         {
             "type": "shell",
             "label": "IDF monitor the current project",
-            "command": "source ~/.zshrc ; idf.py -p /dev/usbserial-00E3A8A2 monitor",
+            "command": "source ~/.zshrc ; idf.py -p /dev/tty.usbserial-00E3A8A2 monitor",
             "args": [
             ],
             "options": {

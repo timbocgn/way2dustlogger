@@ -1,14 +1,14 @@
 /*
     --------------------------------------------------------------------------------
 
-    ESPTempLogger       
+    ESPDustLogger       
     
-    ESP32 based IoT Device for temperature logging featuring an MQTT client and 
-    REST API acess.
+    ESP32 based IoT Device for air quality logging featuring an MQTT client and 
+    REST API acess. Works in conjunction with a VINDRIKTNING air sensor from IKEA.
     
     --------------------------------------------------------------------------------
 
-    Copyright (c) 2019 Tim Hagemann / way2.net Services
+    Copyright (c) 2021 Tim Hagemann / way2.net Services
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -236,9 +236,9 @@ static esp_err_t system_info_get_handler(httpd_req_t *req)
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-static esp_err_t temperature_data_get_handler(httpd_req_t *req)
+static esp_err_t dust_data_get_handler(httpd_req_t *req)
 {
-    ESP_LOGI(REST_TAG,"temperature_data_get_handler %s",req->uri);
+    ESP_LOGI(REST_TAG,"dust_data_get_handler %s",req->uri);
 
     httpd_resp_set_type(req, "application/json");
 
@@ -247,7 +247,7 @@ static esp_err_t temperature_data_get_handler(httpd_req_t *req)
     char *l_sensorint = strrchr(req->uri,'/');
     if (!l_sensorint)
     {
-        ESP_LOGE(REST_TAG, "temperature_data_get_handler: Illegal URI");
+        ESP_LOGE(REST_TAG, "dust_data_get_handler: Illegal URI");
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Illegal URI");
         return ESP_FAIL;
     }
@@ -258,9 +258,9 @@ static esp_err_t temperature_data_get_handler(httpd_req_t *req)
 
     // ---- check if this is a valid index
 
-    if (l_sensor_idx < 1 && l_sensor_idx>= CONFIG_TEMP_SENSOR_CNT)
+    if (l_sensor_idx < 1 || l_sensor_idx > CONFIG_TEMP_SENSOR_CNT)
     {
-        ESP_LOGE(REST_TAG, "temperature_data_get_handler: Illegal sensor index %d",l_sensor_idx);
+        ESP_LOGE(REST_TAG, "dust_data_get_handler: Illegal sensor index %d",l_sensor_idx);
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Illegal sensor index");
         return ESP_FAIL;
     }
@@ -269,9 +269,9 @@ static esp_err_t temperature_data_get_handler(httpd_req_t *req)
 
     cJSON *root = cJSON_CreateObject();
     
-    cJSON_AddNumberToObject(root, "temp", g_SensorManager.GetSensor(l_sensor_idx-1).GetTemp());
-    cJSON_AddNumberToObject(root, "rh", g_SensorManager.GetSensor(l_sensor_idx-1).GetRH());
-    cJSON_AddNumberToObject(root, "dp", g_SensorManager.GetSensor(l_sensor_idx-1).GetDP());
+    cJSON_AddNumberToObject(root, "pm1", g_SensorManager.GetSensor(l_sensor_idx-1).GetPM1());
+    cJSON_AddNumberToObject(root, "pm2", g_SensorManager.GetSensor(l_sensor_idx-1).GetPM2());
+    cJSON_AddNumberToObject(root, "pm10", g_SensorManager.GetSensor(l_sensor_idx-1).GetPM10());
     
     const char *sys_info = cJSON_Print(root);
     httpd_resp_sendstr(req, sys_info);
@@ -284,9 +284,9 @@ static esp_err_t temperature_data_get_handler(httpd_req_t *req)
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-static esp_err_t temperature_cnt_get_handler(httpd_req_t *req)
+static esp_err_t dust_cnt_get_handler(httpd_req_t *req)
 {
-    ESP_LOGI(REST_TAG,"temperature_cnt_get_handler %s",req->uri);
+    ESP_LOGI(REST_TAG,"dust_cnt_get_handler %s",req->uri);
 
     httpd_resp_set_type(req, "application/json");
 
@@ -603,25 +603,25 @@ esp_err_t start_rest_server(const char *base_path)
 
     // ---- URI handler for getting the number iof sensors
 
-    httpd_uri_t temperature_cnt_get_uri;
+    httpd_uri_t dust_cnt_get_uri;
     
-    temperature_cnt_get_uri.uri      = "/api/v1/sensorcnt";
-    temperature_cnt_get_uri.user_ctx = rest_context;
-    temperature_cnt_get_uri.method   = HTTP_GET;
-    temperature_cnt_get_uri.handler  = temperature_cnt_get_handler;
+    dust_cnt_get_uri.uri      = "/api/v1/sensorcnt";
+    dust_cnt_get_uri.user_ctx = rest_context;
+    dust_cnt_get_uri.method   = HTTP_GET;
+    dust_cnt_get_uri.handler  = dust_cnt_get_handler;
     
-    httpd_register_uri_handler(server, &temperature_cnt_get_uri);
+    httpd_register_uri_handler(server, &dust_cnt_get_uri);
 
-    // ---- URI handler for getting temperature
+    // ---- URI handler for getting dust
 
-    httpd_uri_t temperature_data_get_uri;
+    httpd_uri_t dust_data_get_uri;
     
-    temperature_data_get_uri.uri      = "/api/v1/temp/*";
-    temperature_data_get_uri.user_ctx = rest_context;
-    temperature_data_get_uri.method   = HTTP_GET;
-    temperature_data_get_uri.handler  = temperature_data_get_handler;
+    dust_data_get_uri.uri      = "/api/v1/air/*";
+    dust_data_get_uri.user_ctx = rest_context;
+    dust_data_get_uri.method   = HTTP_GET;
+    dust_data_get_uri.handler  = dust_data_get_handler;
     
-    httpd_register_uri_handler(server, &temperature_data_get_uri);
+    httpd_register_uri_handler(server, &dust_data_get_uri);
 
     // ---- URI handler for getting web server files 
 

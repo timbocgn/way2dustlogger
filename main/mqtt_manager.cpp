@@ -1,14 +1,14 @@
 /*
     --------------------------------------------------------------------------------
 
-    ESPTempLogger       
+    ESPDustLogger       
     
-    ESP32 based IoT Device for temperature logging featuring an MQTT client and 
-    REST API acess.
+    ESP32 based IoT Device for air quality logging featuring an MQTT client and 
+    REST API acess. Works in conjunction with a VINDRIKTNING air sensor from IKEA.
     
     --------------------------------------------------------------------------------
 
-    Copyright (c) 2019 Tim Hagemann / way2.net Services
+    Copyright (c) 2021 Tim Hagemann / way2.net Services
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -116,9 +116,9 @@ void MqttManager::ProcessCallback(void)
 
             cJSON *root = cJSON_CreateObject();
             
-            cJSON_AddNumberToObject(root, "temp", g_SensorManager.GetSensor(l_senidx).GetTemp());
-            cJSON_AddNumberToObject(root, "rh", g_SensorManager.GetSensor(l_senidx).GetRH());
-            cJSON_AddNumberToObject(root, "dp", g_SensorManager.GetSensor(l_senidx).GetDP());
+            cJSON_AddNumberToObject(root, "pm1", g_SensorManager.GetSensor(l_senidx).GetPM1());
+            cJSON_AddNumberToObject(root, "pm2", g_SensorManager.GetSensor(l_senidx).GetPM2());
+            cJSON_AddNumberToObject(root, "pm10", g_SensorManager.GetSensor(l_senidx).GetPM10());
             
             const char *sys_info = cJSON_Print(root);
             

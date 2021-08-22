@@ -1,14 +1,14 @@
 /*
     --------------------------------------------------------------------------------
 
-    ESPTempLogger       
+    ESPDustLogger       
     
-    ESP32 based IoT Device for temperature logging featuring an MQTT client and 
-    REST API acess.
+    ESP32 based IoT Device for air quality logging featuring an MQTT client and 
+    REST API acess. Works in conjunction with a VINDRIKTNING air sensor from IKEA.
     
     --------------------------------------------------------------------------------
 
-    Copyright (c) 2019 Tim Hagemann / way2.net Services
+    Copyright (c) 2021 Tim Hagemann / way2.net Services
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -37,11 +37,12 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include "ESP32_SHT1x.h"
+#include "vindriktning.h"
 #include "sdkconfig.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
+/*
 class SensorWrapper
 {
 
@@ -80,6 +81,7 @@ private:
 
     SHT1x m_Sensor;
 };
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -94,7 +96,7 @@ public:
 
     // --- low level getters
 
-    SensorWrapper &GetSensor(int f_idx)
+    CVindriktning &GetSensor(int f_idx)
     {
         assert(f_idx < CONFIG_TEMP_SENSOR_CNT);
         return m_Sensors[f_idx];
@@ -106,7 +108,7 @@ public:
     }
 
 private:
-    SensorWrapper m_Sensors[CONFIG_TEMP_SENSOR_CNT];
+    CVindriktning m_Sensors[CONFIG_TEMP_SENSOR_CNT];
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////

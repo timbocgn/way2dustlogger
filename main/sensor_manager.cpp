@@ -1,14 +1,14 @@
 /*
     --------------------------------------------------------------------------------
 
-    ESPTempLogger       
+    ESPDustLogger       
     
-    ESP32 based IoT Device for temperature logging featuring an MQTT client and 
-    REST API acess.
+    ESP32 based IoT Device for air quality logging featuring an MQTT client and 
+    REST API acess. Works in conjunction with a VINDRIKTNING air sensor from IKEA.
     
     --------------------------------------------------------------------------------
 
-    Copyright (c) 2019 Tim Hagemann / way2.net Services
+    Copyright (c) 2021 Tim Hagemann / way2.net Services
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +63,7 @@ void SensorManager::ProcessMeasurements(void)
         }
         else
         {
-            ESP_LOGI(TAG, "Sensor %d: Temp %f, rh %f, dp %f",i,m_Sensors[i].GetTemp(),m_Sensors[i].GetRH(),m_Sensors[i].GetDP());
+            ESP_LOGI(TAG, "Sensor %d: pm1 %f, pm2.5 %f, pm10 %f",i,m_Sensors[i].GetPM1(),m_Sensors[i].GetPM2(),m_Sensors[i].GetPM10());
         }
     }
 }
@@ -74,21 +74,17 @@ void SensorManager::InitSensors(void)
 {
     // --- first get the #define config data into an array
 
-    gpio_num_t l_SCLK[CONFIG_TEMP_SENSOR_CNT];
     gpio_num_t l_DATA[CONFIG_TEMP_SENSOR_CNT];
 
 #if CONFIG_TEMP_SENSOR_CNT >= 1
-    l_SCLK[0] = (gpio_num_t)CONFIG_TEMP_SENSOR1_SCLK_GPIO;
     l_DATA[0] = (gpio_num_t)CONFIG_TEMP_SENSOR1_DATA_GPIO;
 #endif
 
 #if CONFIG_TEMP_SENSOR_CNT >= 2
-    l_SCLK[1] = (gpio_num_t)CONFIG_TEMP_SENSOR2_SCLK_GPIO;
     l_DATA[1] = (gpio_num_t)CONFIG_TEMP_SENSOR2_DATA_GPIO;
 #endif
 
 #if CONFIG_TEMP_SENSOR_CNT >= 3
-    l_SCLK[2] = (gpio_num_t)CONFIG_TEMP_SENSOR3_SCLK_GPIO;
     l_DATA[2] = (gpio_num_t)CONFIG_TEMP_SENSOR3_DATA_GPIO;
 #endif
 
@@ -100,8 +96,8 @@ void SensorManager::InitSensors(void)
 
     for (int i = 0; i < CONFIG_TEMP_SENSOR_CNT; ++i)
     {
-        ESP_LOGI(TAG, "Sensor %d GPIOs: SCLK %d DATA %d", i,l_SCLK[i],l_DATA[i]);
-        if (!m_Sensors[i].SetupSensor(l_SCLK[i],l_DATA[i]))
+        ESP_LOGI(TAG, "Sensor %d GPIOs: DATA %d", i,l_DATA[i]);
+        if (!m_Sensors[i].SetupSensor(l_DATA[i]))
         {
             ESP_LOGE(TAG, "Failed to initialize sensor %d", i);
         }

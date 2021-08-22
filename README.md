@@ -16,11 +16,6 @@ https://docs.espressif.com/projects/esp-idf/en/latest/get-started/
 Be sure that you have the `idf.py` application in your path and that all environment variables are setup, e.g. by providing a `.zshrc` file (example for macOS Catalina):
 
 ```
-# append
-path+=('/Library/Frameworks/Python.framework/Versions/3.6/bin')
-# export to sub-processes (make it inherited by child processes)
-export PATH
-
 #ESP32 stuff
 
 export IDF_PATH=<your IDF path>/esp-idf
@@ -33,13 +28,13 @@ source $IDF_PATH/export.sh
 Download or clone the repository to your system
 
 ```
-https://github.com/timbocgn/way2templogger.git
+https://github.com/timbocgn/way2dustlogger.git
 ```
 
 Firstly you should install all the dependencies for the vue based web application
 
 ```
-cd front/web-demo
+cd front/webapp
 npm install
 ```
 
@@ -58,7 +53,7 @@ cd ../..
 idf.py menuconfig
 ```
 
-Under "ESP Temp Logger Configuration" you will be able to define the number of sensors connected and the respective GPIO pins. Please see the wiring instructions for the bootstrap switch and the info LED.
+Under "ESP Dust Logger Configuration" you will be able to define the number of sensors connected and the respective GPIO pins. Please see the wiring instructions for the bootstrap switch and the info LED.
 
 When configured, compile and flash to your device:
 
@@ -100,6 +95,7 @@ to check if the sensors are working.
 
 The sensor provides a REST-API for the device. See the postman examples in ESP.postman_collection.json.
 
+<<TO BE UPDATED>>
 * `temp` is the temperature in degree celsius
 * `rh` is the relative humidity
 * `dp` is the dew point in degree celsius
@@ -109,6 +105,8 @@ The sensor provides a REST-API for the device. See the postman examples in ESP.p
 Just provide the necessary data in the MQTT section and enable the MQTT client. The sensor will provide the data as JSON struct:
 
 ```
+<<TO BE UPDATED>>
+
 {
   "temp" : 24.039997100830078,
   "rh" : 55.46722412109375,
@@ -126,7 +124,7 @@ To change the UI it is very handy to you the build in web server of webpack:
 npm run serve
 ```
 
-It will start a local web server on your machine which forwards the API calls to your device. Plese check the `vue.config.js` file in `front/web-demo` and enter the IP adress the requests should be forwarded to (to the address of your ESP).
+It will start a local web server on your machine which forwards the API calls to your device. Please check the `vue.config.js` file in `front/webapp` and enter the IP adress the requests should be forwarded to (to the address of your ESP).
 
 Please follow the vue.js guides and how to's on how to change the front end code.
 
@@ -204,5 +202,3 @@ This project is licensed under the MIT License.
 ## Acknowledgments
 
 * The ESP IDF authors for the perfect source code examples they provide within their SDK
-* John Burns (www.john.geek.nz) for parts of the SHT1x code
-* Daesung Kim for the initial work on the SHT1x code base

@@ -1,35 +1,14 @@
 /*
+	--------------------------------------------------------------------------------
+
+    ESPDustLogger       
+    
+    ESP32 based IoT Device for air quality logging featuring an MQTT client and 
+    REST API acess. Works in conjunction with a VINDRIKTNING air sensor from IKEA.
+    
     --------------------------------------------------------------------------------
 
-    ESPTempLogger       
-    
-    ESP32 based IoT Device for temperature logging featuring an MQTT client and 
-    REST API acess.
-    
-	ESP32 IDF SHT1x communication library
-	By:      Tim Hagemann (tim@way2.net)
-	Date:    26 November 2019
-	License: CC BY-SA v3.0 - http://creativecommons.org/licenses/by-sa/3.0/
-
-	This is a derivative work based on:
-
-	Raspberry Pi SHT1x communication library.
-	By:      John Burns (www.john.geek.nz)
-	Date:    01 November 2012
-	License: CC BY-SA v3.0 - http://creativecommons.org/licenses/by-sa/3.0/
-
-	Adapted by Tim Hagemann (tim@way2.net) in Sep'14 to support multiple sensors
-
-	This is a derivative work based on
-	
-		Name: Nice Guy SHT11 library
-		By: Daesung Kim
-		Date: 04/04/2011
-		Source: http://www.theniceguy.net/2722
-		License: Unknown - Attempts have been made to contact the author
-    --------------------------------------------------------------------------------
-
-    Copyright (c) 2019 Tim Hagemann / way2.net Services
+    Copyright (c) 2021 Tim Hagemann / way2.net Services
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -60,15 +39,9 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 
-#include "ESP32_SHT1x.h"
+#include "vindriktning.h"
 
-/* Definitions of all known SHT1x commands */
-
-#define SHT1x_MEAS_T	0x03			// Start measuring of temperature.
-#define SHT1x_MEAS_RH	0x05			// Start measuring of humidity.
-#define SHT1x_STATUS_R	0x07			// Read status register.
-#define SHT1x_STATUS_W	0x06			// Write status register.
-#define SHT1x_RESET		0x1E			// Perform a sensor soft reset.
+/*
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -91,52 +64,30 @@
 
 #define SHT1x_GET_BIT 	gpio_get_level(m_SHT1x_pin_data)
 
+*/
 ////////////////////////////////////////////////////////////////////////////////////////
 
-static const char *TAG = "ESP32_SHT1x";
+static const char *TAG = "ESP32_vindriktning";
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-SHT1x::SHT1x(void)
+CVindriktning::CVindriktning(void)
 {
 	m_Initialized		= false;
 
-	m_SHT1x_pin_sck		= (gpio_num_t)0;
-	m_SHT1x_pin_data	= (gpio_num_t)0;
+	m_pin_data	= (gpio_num_t)0;
 	
-	m_SHT1x_crc			= 0;
-	m_SHT1x_status_reg 	= 0;
-
-	m_rh				= 0;
-	m_temp				= 0;
+	m_pm1				= 0;
+	m_pm2				= 0;
+	m_pm10				= 0;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-void SHT1x::SHT1x_Crc_Check(unsigned char value) 
+/*
+bool CVindriktning::SHT1x_InitPins(void) 
 {
-	unsigned char i;
-	
-	for (i=8; i; i--)
-	{
-		if ((m_SHT1x_crc ^ value) & 0x80)
-		{
-			m_SHT1x_crc <<= 1;
-			m_SHT1x_crc ^= 0x31;
-		}
-		else
-		{
-			m_SHT1x_crc <<= 1;
-		}
-		value <<=1;
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-bool SHT1x::SHT1x_InitPins(void) 
-{	
+		
 	esp_err_t l_err;
 	// --- Reset gpios to default state (select gpio function, enable pullup and disable input and output).
 
@@ -174,23 +125,11 @@ bool SHT1x::SHT1x_InitPins(void)
 	return true;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////////////
 
 bool SHT1x::SHT1x_Reset(void) 
 {
-	// Chapter 3.4
-	unsigned char i;
-
-	SHT1x_DATA_HI;
-	SHT1x_DELAY;
-	for (i=9; i; i--)
-	{
-		SHT1x_SCK_HI;	SHT1x_DELAY;
-		SHT1x_SCK_LO;	SHT1x_DELAY;
-	}
-	SHT1x_Transmission_Start();
-	SHT1x_Sendbyte(SHT1x_RESET);  // Soft reset
-
 	return true;
 }
 
@@ -200,36 +139,6 @@ void SHT1x::SHT1x_Transmission_Start(void)
 {
 	assert(m_Initialized);
 
-	// Chapter 3.2
-	SHT1x_SCK_HI;	SHT1x_DELAY;
-	SHT1x_DATA_LO;	SHT1x_DELAY;
-	SHT1x_SCK_LO;	SHT1x_DELAY;
-	SHT1x_SCK_HI;	SHT1x_DELAY;
-	SHT1x_DATA_HI;	SHT1x_DELAY;
-	SHT1x_SCK_LO;	SHT1x_DELAY;
-	
-	// TODO: this is a design flaw - status register is never read, just be accident
-	//		 it is always zero. 
-
-	// Reset crc calculation. Start value is the content of the status register.
-	m_SHT1x_crc = SHT1x_Mirrorbyte( m_SHT1x_status_reg & 0x0F );
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-unsigned char SHT1x::SHT1x_Mirrorbyte(unsigned char value) 
-{
-	unsigned char ret=0, i;
-
-	for (i=0x80; i ; i>>=1)
-	{
-		if(value & 0x01)
-			ret |= i;
-
-		value >>= 1;
-	}
-
-	return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -249,7 +158,7 @@ unsigned char SHT1x::SHT1x_Readbyte(bool send_ack)
 		SHT1x_SCK_LO;	SHT1x_DELAY; // SCK lo => sensor puts new data
 	}
 
-	/* send ACK if required */
+	// send ACK if required 
 	if ( send_ack )
 	{
 		SHT1x_DATA_LO;	SHT1x_DELAY; // Get DATA line
@@ -315,7 +224,7 @@ bool SHT1x::SHT1x_Measure_Start(SHT1xMeasureType type)
 	// send a transmission start and reset crc calculation
 	SHT1x_Transmission_Start();
 	// send command. Crc gets updated!
-	return SHT1x_Sendbyte((unsigned char) type );
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -324,12 +233,12 @@ bool SHT1x::SHT1x_Get_Measure_Value(unsigned short int * value )
 {
 	unsigned char * chPtr = (unsigned char*) value;
 	unsigned char checksum;
-	unsigned char delay_count=62;  /* delay is 62 * 5ms */
+	unsigned char delay_count=62;  // delay is 62 * 5ms 
 
 	assert(m_Initialized);
 
-	/* Wait for measurement to complete (DATA pin gets LOW) */
-	/* Raise an error after we waited 250ms without success (210ms + 15%) */
+	// Wait for measurement to complete (DATA pin gets LOW) 
+	// Raise an error after we waited 250ms without success (210ms + 15%) 
 	while( SHT1x_GET_BIT )
 	{
 		ets_delay_us(5000);			// $$$$$$$$$$$$$$$$$$ 1 ms not working $$$$$$$$$$$$$$$$$$$$$$$$
@@ -408,13 +317,15 @@ float SHT1x::SHT1x_CalcDewpoint(float fRH ,float fTemp)
 	
 	return (float)(Tn * ((lnRH + mTTnT)/(m - lnRH - mTTnT)));
 }
+*/
 
+/*
 ////////////////////////////////////////////////////////////////////////////////////////
 
 float SHT1x::SHT1x_CalcAbsHumidity(float r ,float T)
 {
 	// --- this function returns the absolute humidity in g/m3 for r in % and T in °C
-
+*/
 	/*
 	
 	Bezeichnungen:
@@ -448,7 +359,7 @@ float SHT1x::SHT1x_CalcAbsHumidity(float r ,float T)
 	AF(r,TK) = 10^5 * mw/R* * DD(r,T)/TK; AF(TD,TK) = 10^5 * mw/R* * SDD(TD)/TK
 
 	*/
-	
+	/*
 	float a,b;
 	if (T < 0)
 	{
@@ -469,55 +380,33 @@ float SHT1x::SHT1x_CalcAbsHumidity(float r ,float T)
 	
 	return AF;
 }
-
+*/
 ////////////////////////////////////////////////////////////////////////////////////////
 
-bool SHT1x::SetupSensor(gpio_num_t f_sck,gpio_num_t f_data)
+bool CVindriktning::SetupSensor(gpio_num_t f_data)
 {
-	m_SHT1x_pin_sck		= f_sck;
-	m_SHT1x_pin_data	= f_data;
+	m_pin_data	= f_data;
 
 	// --- set hardware pins
 
-	SHT1x_InitPins();
+	//SHT1x_InitPins();
 	
 	// --- Reset the SHT1x
 
-	SHT1x_Reset();
+	//SHT1x_Reset();
 
 	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-bool SHT1x::PerformMeasurement(void)
+bool CVindriktning::PerformMeasurement(void)
 {
-	bool 				l_success;
-	unsigned short int 	l_rawTemp,l_rawRH;
-	
-	// --- Request Temperature measurement
+	m_pm2 = rand() % 1000;
+	m_pm1 = rand() % 1000;
+	m_pm10 = rand() % 1000;
 
-	l_success = SHT1x_Measure_Start(SHT1xMeaT );
-	if (!l_success) { printf("SHT1x_Measure_Start SHT1xMeaT failed\n"); return false; }
-		
-	// --- Read g_InsideSensor measurement
-
-	l_success = SHT1x_Get_Measure_Value(&l_rawTemp);
-	if (!l_success) { printf("SHT1x_Get_Measure_Value SHT1xMeaT failed\n"); return false; }
-
-	// --- Request Humidity Measurement
-
-	l_success = SHT1x_Measure_Start(SHT1xMeaRh );
-	if (!l_success) { printf("SHT1x_Measure_Start SHT1xMeaRh failed\n"); return false; }
-		
-	// --- Read Humidity measurement
-
-	l_success = SHT1x_Get_Measure_Value(&l_rawRH );
-	if (!l_success) { printf("SHT1x_Get_Measure_Value SHT1xMeaRh failed\n"); return false; }
-
-	// --- Calculate temperature and humidity from raw values and store in object
-
-	SHT1x_Calc(l_rawRH, l_rawTemp);
+	ESP_LOGE(TAG, "SCVindriktning stub implementation generating random values");
 
 	return true;
 }

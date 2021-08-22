@@ -1,14 +1,14 @@
 /*
     --------------------------------------------------------------------------------
 
-    ESPTempLogger       
+     ESPDustLogger       
     
-    ESP32 based IoT Device for temperature logging featuring an MQTT client and 
-    REST API acess.
+    ESP32 based IoT Device for air quality logging featuring an MQTT client and 
+    REST API acess. Works in conjunction with a VINDRIKTNING air sensor from IKEA.
     
     --------------------------------------------------------------------------------
 
-    Copyright (c) 2019 Tim Hagemann / way2.net Services
+    Copyright (c) 2021 Tim Hagemann / way2.net Services
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
