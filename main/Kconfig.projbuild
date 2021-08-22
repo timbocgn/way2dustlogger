@@ -2,7 +2,7 @@ menu "ESP Temp Logger Configuration"
 
     config PRODUCT_NAME
         string "Product Name"
-        default "way2TempLogger"
+        default "way2DustLogger"
         help
             Specify how your product should be called
 

@@ -4,5 +4,6 @@
         "task.h": "c",
         "gpio.h": "c",
         "esp_log.h": "c"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

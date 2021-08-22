@@ -11,11 +11,9 @@
           </v-toolbar>
 
           <v-card-text>
-            <p>Welcome to the ESP32 based temperature logging device from way2.net services.</p>
+            <p>Welcome to the ESP32 based dust logging device from way2.net services.</p>
 
-            <p>It gives you a SHT15 based sensor configuration for any 
-            number of sensors, a nice web interface for bootstrapping and configuring the device, as well as an MQTT client for pushing the sensor
-            data to any MQTT broker.</p>
+            <p>It works in conjunction with the VINDRIKTNING air sensor from IKEA which can be hacked to become an IoT by this. </p>
 
             <p>You also can leverage the API calls to configure the device and get the sensor data to your favorite application.</p>
 
@@ -27,7 +25,7 @@
             <v-divider></v-divider>
 
             <br>
-            <p> Project homepage: <a href="http://www.way2.net/esplogger">way2.net Homepage</a> </p>
+            <p> Project homepage: <a href="http://www.way2.net/espdustlogger">way2.net Homepage</a> </p>
 
           </v-card-text>
 

@@ -134,8 +134,8 @@ export default {
 
       this.$ajax
         .post("/api/v1/config", {
-	          Wifi_SSID: this.wifi_name,
-	          Wifi_Password: this.wifi_pass,
+            Wifi_SSID: this.wifi_name,
+            Wifi_Password: this.wifi_pass,
             Device_Name: this.device_name,
             mqtt_enable: this.mqtt_enable ? 1 : 0,
             mqtt_server: this.mqtt_server,
@@ -148,6 +148,7 @@ export default {
 
           this.errtext      = "Configuration saved successfully";
           this.showerr      = true;
+          console.log(data);
         })
         .catch(error => {
           this.loading_aps  = false;

@@ -10,7 +10,7 @@
 
           <tbody>   
             <template v-if="values.length != 0">
-              <template v-for="(item,index) in values">
+              <div v-for="(item,index) in values" :key="index">
 
                   <tr>
                     <td>Sensor {{index+1}}</td>
@@ -42,7 +42,7 @@
                         <td colspan=3 class="grey--text">Loading...</td> 
                       </tr>
                 </template>
-              </template>
+              </div>
             </template>
             <template v-else>
               <tr>

@@ -39,7 +39,7 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "driver/gpio.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
 #include "esp_vfs_semihost.h"
@@ -48,7 +48,7 @@
 #include "esp_wifi.h"
 #include "sdmmc_cmd.h"
 #include "nvs_flash.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "mdns.h"
@@ -70,7 +70,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-static const char *TAG = "ESPTempLogger";
+static const char *TAG = "ESPDustLogger";
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -94,9 +94,9 @@ static void initialise_mdns(void)
 #define GOT_IPV4_BIT BIT(0)
 #define GOT_IPV6_BIT BIT(1)
 
-static EventGroupHandle_t s_connect_event_group;
-static ip4_addr_t s_ip_addr;
-static ip6_addr_t s_ipv6_addr;
+//static EventGroupHandle_t s_connect_event_group;
+//static ip4_addr_t s_ip_addr;
+//static ip6_addr_t s_ipv6_addr;
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -137,7 +137,7 @@ static void on_wifi_connect(void *arg, esp_event_base_t event_base,
                             int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "on_wifi_connect...");
-    tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
+    //tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -200,8 +200,7 @@ static void start_wifi_client()
         }
 
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
-        //ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
         ESP_ERROR_CHECK(esp_wifi_start());
 
         ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s",(char *)wifi_config.ap.ssid);
@@ -235,13 +234,15 @@ static void start_wifi_client()
         ESP_LOGI(TAG, "Connecting to '%s'...", wifi_config.sta.ssid);
 
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
         ESP_ERROR_CHECK(esp_wifi_start());
         ESP_ERROR_CHECK(esp_wifi_connect());
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
+
+/*
 
 static void stop_wifi_client()
 {
@@ -254,6 +255,7 @@ static void stop_wifi_client()
     ESP_ERROR_CHECK(esp_wifi_stop());
     ESP_ERROR_CHECK(esp_wifi_deinit());
 }
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -330,14 +332,18 @@ void app_main()
 
     ESP_ERROR_CHECK(g_ConfigManager.InitConfigManager());
 
-    // ---- init tcpip lib
+    // ---- init netif lib
 
-    tcpip_adapter_init();
- 
+    esp_netif_init();
+  
     // ---- create default event loop
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+
+    esp_netif_create_default_wifi_ap();
+    esp_netif_create_default_wifi_sta();
+ 
     // ---- check for bootstrap mode
 
     if (g_ConfigManager.GetIntValue(CFMGR_BOOTSTRAP_DONE) == 0)

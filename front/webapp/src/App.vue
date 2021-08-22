@@ -1,3 +1,8 @@
+
+<style lang="sass">
+    @import '../node_modules/typeface-roboto/index.css'
+  </style>
+
 <template>
   <v-app id="inspire">
     
@@ -9,7 +14,7 @@
       clipped-left
     >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"><v-icon>{{ iconMenu }}</v-icon></v-app-bar-nav-icon>
-      <v-toolbar-title>way2.net Thermometer</v-toolbar-title>
+      <v-toolbar-title>way2.net Dust Logger</v-toolbar-title>
     </v-app-bar>
 
 
@@ -37,14 +42,14 @@
     </v-navigation-drawer>
    
  
-    <v-content>
+    <v-main>
       <v-container fluid fill-height>
         <router-view></router-view>
       </v-container>
-    </v-content>
+    </v-main>
    
     <v-footer color="grey accent-4" app fixed>
-      <span class="white--text"> &copy; 2019 way2.net Services</span>
+      <span class="white--text"> &copy; 2021 way2.net Services</span>
     </v-footer>
   </v-app>
 </template>
@@ -53,7 +58,7 @@
 
 import { mdiMenu } from '@mdi/js'
 import { mdiHomeCircle } from '@mdi/js'
-import { mdiSettings } from '@mdi/js'
+import { mdiAccountSettings } from '@mdi/js'
 import { mdiHelpCircle } from '@mdi/js'
 
 export default {
@@ -63,7 +68,7 @@ export default {
       item: null,
       items: [
           { title: 'Home', icon: mdiHomeCircle, to: '/' },
-          { title: 'Config', icon: mdiSettings, to:'/config' },
+          { title: 'Config', icon: mdiAccountSettings, to:'/config' },
           { title: 'About', icon: mdiHelpCircle, to:'about' },
         ],
       drawer: null,
