@@ -143,11 +143,11 @@ BOOTSTRAP_GPIO          = 35
 INFOLED_GPIO            = 2
 ```
 
-The wiring is quite simple as you can see in the wiring.png file in the repository.
+The wiring is quite simple as you can see in the `hardware/EspDustLogger_schem.pdf` file in the repository.
 
+The part with the transistors converts the 5V signal of the sensor to the 3.3V level of the ESP32. There are many articles in the web that it will work without, but this is dangerous as the ESP is not 5V-save.
 
-* the information LED is internally (!) connected to a GPIO which can drive the 2mA current. 
-* the bootstrap button is pulled up using the 2k resistor. A input only GPIO can be used here.
+The button is pulled up to 3.3V and gets pulled down to GND when you press the button. The device will then enter bootstrap mode and open the own wifi ap.
 
 ## Built With
 
@@ -155,6 +155,9 @@ The wiring is quite simple as you can see in the wiring.png file in the reposito
 * [vue.js](https://vuejs.org) - Javascript frontend framework used for the SPA
 * [node.js](https://nodejs.org/en/) - Used to compile the vue app
 * [webpack](https://webpack.js.org) - Module bundler for the vue app
+* [pm1006 on github](https://github.com/bertrik/pm1006) - code for receiving the sensor data
+
+	
 
 ## Authors
 
@@ -167,3 +170,5 @@ This project is licensed under the MIT License.
 ## Acknowledgments
 
 * The ESP IDF authors for the perfect source code examples they provide within their SDK
+* Bertrik Sikken for his excellent PM1006 class available on GitHub
+
