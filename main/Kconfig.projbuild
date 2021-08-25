@@ -20,6 +20,13 @@ menu "ESP Dust Logger Configuration"
         help
             Sensor 1: DATA connected to GPIO...
 
+    config TEMP_SENSOR1_UART_PORT_NUM
+        int "ESP UART number for sensor 1"
+        range 0 3
+        default 1
+        help
+            Sensor 1: ESP UART number
+
    config TEMP_SENSOR2_DATA_GPIO
         int "DATA GPIO for sensor 2"
         range 0 34
@@ -27,12 +34,26 @@ menu "ESP Dust Logger Configuration"
         help
             Sensor 2: DATA connected to GPIO...
 
-   config TEMP_SENSOR3_DATA_GPIO
+    config TEMP_SENSOR2_UART_PORT_NUM
+        int "ESP UART number for sensor 2"
+        range 0 3
+        default 2
+        help
+            Sensor 2: ESP UART number
+
+    config TEMP_SENSOR3_DATA_GPIO
         int "DATA GPIO for sensor 3"
         range 0 34
         default 0
         help
             Sensor 3: DATA connected to GPIO...
+
+    config TEMP_SENSOR3_UART_PORT_NUM
+        int "ESP UART number for sensor 3"
+        range 0 3
+        default 3
+        help
+            Sensor 3: ESP UART number
 
     config BOOTSTRAP_GPIO
         int "Bootstrap GPIO number"
@@ -43,7 +64,7 @@ menu "ESP Dust Logger Configuration"
 
 
     config INFOLED_GPIO
-        int "Error LED GPIO number"
+        int "Info LED GPIO number"
         range 0 39
         default 2
         help

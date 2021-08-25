@@ -43,6 +43,7 @@
 #include "cJSON.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/gpio.h"
+#include "driver/uart.h"
 #include "nvs_flash.h"
 #include "esp_wifi.h"
 

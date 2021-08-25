@@ -40,6 +40,8 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "driver/gpio.h"
+#include "driver/uart.h"
+
 #include "esp_log.h"
 
 #include "config_manager.h"

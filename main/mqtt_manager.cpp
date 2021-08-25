@@ -45,6 +45,7 @@
 #include "esp_event.h"
 #include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
+#include "driver/uart.h"
 #include "esp_vfs_semihost.h"
 #include "esp_vfs_fat.h"
 #include "esp_spiffs.h"

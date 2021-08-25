@@ -36,6 +36,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
+#include "driver/uart.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 
@@ -75,17 +76,21 @@ void SensorManager::InitSensors(void)
     // --- first get the #define config data into an array
 
     gpio_num_t l_DATA[CONFIG_TEMP_SENSOR_CNT];
+    uart_port_t l_UART[CONFIG_TEMP_SENSOR_CNT];
 
 #if CONFIG_TEMP_SENSOR_CNT >= 1
     l_DATA[0] = (gpio_num_t)CONFIG_TEMP_SENSOR1_DATA_GPIO;
+    l_UART[0] = (uart_port_t)CONFIG_TEMP_SENSOR1_UART_PORT_NUM;
 #endif
 
 #if CONFIG_TEMP_SENSOR_CNT >= 2
     l_DATA[1] = (gpio_num_t)CONFIG_TEMP_SENSOR2_DATA_GPIO;
+    l_UART[1] = (uart_port_t)CONFIG_TEMP_SENSOR2_UART_PORT_NUM;
 #endif
 
 #if CONFIG_TEMP_SENSOR_CNT >= 3
     l_DATA[2] = (gpio_num_t)CONFIG_TEMP_SENSOR3_DATA_GPIO;
+    l_UART[2] = (uart_port_t)CONFIG_TEMP_SENSOR3_UART_PORT_NUM;
 #endif
 
 #if CONFIG_TEMP_SENSOR_CNT >= 4
@@ -97,7 +102,7 @@ void SensorManager::InitSensors(void)
     for (int i = 0; i < CONFIG_TEMP_SENSOR_CNT; ++i)
     {
         ESP_LOGI(TAG, "Sensor %d GPIOs: DATA %d", i,l_DATA[i]);
-        if (!m_Sensors[i].SetupSensor(l_DATA[i]))
+        if (!m_Sensors[i].SetupSensor(l_DATA[i],l_UART[0]))
         {
             ESP_LOGE(TAG, "Failed to initialize sensor %d", i);
         }

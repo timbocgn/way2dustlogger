@@ -1,8 +1,7 @@
-# ESPTempLogger
+# ESPDustLogger
 
-The ESPTempLogger is a ESP32 IDF based IoT device. It has an interface for multiple SHT1x sensors (configurable on compile time), 
-some REST-APIs for getting the current data and a web interface for configuration.
-
+ESP32 based IoT Device for air quality logging featuring an MQTT client and REST API acess. Works in conjunction with a [VINDRIKTNING](https://www.ikea.com/de/de/p/vindriktning-luftqualitaetssensor-70498242/) air sensor from IKEA.
+    
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. 
@@ -63,15 +62,20 @@ idf.py build
 idf.py -p <your serial device> flash
 ```
 
-If you are using a ESP DevKitC (https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-devkitc.html) using the
-CP2102 USB/Serial chip and its standard driver (https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers), your serial device will be `/dev/cu.SLAB_USBtoUART`.
+My WEMOS mini board (see below) is equipped with a CP2104 USB/UART converter and in my case it defaults to /dev/tty.usbserial-00E3A8A2. 
+
+Please use 
+```
+ls /dev/tty.*
+```
+to find the device name of your programming port.
 
 ### Monitor your device
 
 A lot of debugging output will be generated which you can see if you monitor the ESP:
 
 ```
-idf.py -p /dev/cu.SLAB_USBtoUART monitor
+idf.py -p /dev/tty.usbserial-00E3A8A2 monitor
 ```
 
 ## How to use
@@ -80,37 +84,35 @@ idf.py -p /dev/cu.SLAB_USBtoUART monitor
 
 * Close the bootstrap switch for more than 10 seconds. The system reboots...
 * The LED will blink in a 500ms on - 2500ms off sequence, which indicated that the build in access point is up and running
-* Connect your system to this AP's IP-Address plus 1 - the password is "let-me-in-1234"
+* Connect your system to this AP's IP-Address - the password is "let-me-in-1234"
 * Go to the configuration page, provide your WLAN access point SSID (press 'Scan' to get a list) and provide the password
-* Reboot the system
+* Reboot the system (power off and on)
 * When the LED blinks in a 100ms on - 100ms off - 100ms on - 2700ms off fashion, the system is connecting to your AP
 * When the LED blinks in a 100ms on - 2900ms off fashion, the system is connected to your AP
 
 ### Access the web interface
 
-Please take a look at your router, DHCP server or the monitor output to get the IP address of the ESP32. Point your browser to the IP address
-to check if the sensors are working.
+Please take a look at your router, DHCP server or the monitor output to get the IP address of the ESP32. Point your browser to the IP address to check if the sensors are working. 
+
+It might take a while until the Vindriktning sensor reveives its first measurement.
 
 ### Access the sensor data 
 
-The sensor provides a REST-API for the device. See the postman examples in ESP.postman_collection.json.
+The sensor provides a REST-API for the device. See the postman examples in `Dust Logger.postman_collection.json`.
 
-<<TO BE UPDATED>>
-* `temp` is the temperature in degree celsius
-* `rh` is the relative humidity
-* `dp` is the dew point in degree celsius
+* `pm1` is the number of 1um particles per m^3
+* `pm2` is the number of 2.5um particles per m^3
+* `pm10` is the number of 10um particles per m^3
 
 ### Push the sensor data to MQTT
 
 Just provide the necessary data in the MQTT section and enable the MQTT client. The sensor will provide the data as JSON struct:
 
 ```
-<<TO BE UPDATED>>
-
 {
-  "temp" : 24.039997100830078,
-  "rh" : 55.46722412109375,
-  "dp" : 14.568182945251465
+  "pm1" : 24,
+  "pm2" : 55,
+  "pm10" : 14
 }
 ```
 
@@ -130,58 +132,21 @@ Please follow the vue.js guides and how to's on how to change the front end code
 
 ## Wiring
 
+I used a ESP32 MINI board, sometimes called WEMOS ESP32 mini board although it is not a WEMOS board. I bought mine here: https://www.komputer.de/zen/index.php?main_page=product_info&products_id=530 . They are wideley available, just google for it. GPIO2 is directly connected to a SMD led on this board, so this connection has already been been made.
+
 The default configuration is:
 
 ```
-SENSOR1_SCLK_GPIO   = 26
-SENSOR1_DATA_GPIO   = 25
-SENSOR2_SCLK_GPIO   = 17
-SENSOR2_DATA_GPIO   = 16
-BOOTSTRAP_GPIO      = 35
-INFOLED_GPIO        = 2
+SENSOR1_UART_PORT_NUM   = 1 
+SENSOR1_DATA_GPIO       = 25
+BOOTSTRAP_GPIO          = 35
+INFOLED_GPIO            = 2
 ```
 
-The wiring is quite simple:
+The wiring is quite simple as you can see in the wiring.png file in the repository.
 
-```
 
-                                                 Sensor 1                  Sensor 2
-      +---------------------------+            +-----------+             +-----------+
-      |                           |            |           |             |           |
-      |       ESP32 DevKitC       |   +--------+ SCLK      |        +----+ SCLK      |
-      |                           |   |    +---+ DATA      |        | +--+ DATA      |
-      |                           |   |    |   |           |        | |  |           |
-      |    SENSOR1_SCLK_GPIO(26)  +---+    |   |           |        | |  |           |
-      |    SENSOR1_DATA_GPIO(25)  +--------+   +-----------+        | |  +-----------+
-      |                           |                                 | |
-      |    SENSOR2_SCLK_GPIO(17)  +---------------------------------+ |
-      |    SENSOR2_DATA_GPIO(16)  +-----------------------------------+
-      |                           |
-      |    BOOTSTRAP_GPIO(35)     +----------------------------------+
-      |                           |                                  |
-   +--+ INFOLED_GPIO(2)           |                                  |
-   |  |                           |                                  |
-   |  |                 VCC 3.3V  +--------------------------+       |
-   |  |                 GND       +-----+                    |       |
-   |  +---------------------------+     |                   +-+      |
-   |                                    |                   | |      |
-   |                                    |             2k    | |      |
-   |                                    |                   +-+      |
- +++++                                  |                    |       |
-  +++                                   |                    *-------+
-   +  LED                               |                    ++
-  ---                                   |                     +
-   |                                    |                      +    Push Button
-  +-+                                   |                    *  +
-  | |  2k                               |                    |
-  | |                                   |                    |
-  +-+                                   |                    |
-   |                                    |                    |
-   +------------------------------------*--------------------+
-
-```
-
-* the information LED is directly connected to a GPIO which can drive the 2mA current. 
+* the information LED is internally (!) connected to a GPIO which can drive the 2mA current. 
 * the bootstrap button is pulled up using the 2k resistor. A input only GPIO can be used here.
 
 ## Built With

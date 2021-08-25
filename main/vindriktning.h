@@ -40,10 +40,6 @@
 #include <unistd.h>
 #include <stdio.h>
 
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-
 ////////////////////////////////////////////////////////////////////////////////////////
 
 class CVindriktning
@@ -57,7 +53,7 @@ public:
 
 	// --- actions
 
-	bool SetupSensor(gpio_num_t f_data);
+	bool SetupSensor(gpio_num_t f_data, uart_port_t f_uart);
 	bool PerformMeasurement(void);
 
 	// --- getter
@@ -77,6 +73,18 @@ public:
 		return m_pm10;
 	}
 
+	// --- internal funcitons do not use
+
+	gpio_num_t GetDataPin(void) { return m_pin_data; }
+	uart_port_t GetUart(void) { return m_uart; }
+
+	void SetValues(const uint16_t f_pm2,const uint16_t f_pm1,const uint16_t f_pm10)
+	{
+		m_pm2 	= f_pm2;
+		m_pm10 	= f_pm10;
+		m_pm1 	= f_pm1;
+	}
+
 private:
 
 	float m_pm2;
@@ -84,6 +92,7 @@ private:
 	float m_pm1;
 	
 	gpio_num_t m_pin_data;
+	uart_port_t m_uart;
 	
 	bool m_Initialized;
 };

@@ -118,6 +118,9 @@ esp_err_t InfoManager::InitManager(void)
     esp_err_t l_err = gpio_set_direction(m_bootstrappin,GPIO_MODE_INPUT);
 	if (l_err != ESP_OK) { ESP_LOGE(TAG, "Error setting bootstrap pin (%d) direction to input",m_bootstrappin); return l_err; }
 
+    l_err = gpio_set_pull_mode(m_bootstrappin, GPIO_PULLUP_ONLY);
+	if (l_err != ESP_OK) { ESP_LOGE(TAG, "Error setting bootstrap pin (%d) pullup mode",m_bootstrappin); return l_err; }
+
     gpio_reset_pin(m_infopin);
     l_err = gpio_set_direction(m_infopin,GPIO_MODE_OUTPUT);
 	if (l_err != ESP_OK) { ESP_LOGE(TAG, "Error setting info LED pin (%d) direction to output",m_infopin); return l_err;}

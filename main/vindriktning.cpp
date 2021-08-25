@@ -6,6 +6,10 @@
     ESP32 based IoT Device for air quality logging featuring an MQTT client and 
     REST API acess. Works in conjunction with a VINDRIKTNING air sensor from IKEA.
     
+
+	This code is based on Bertrik Sikken PM1006 class available at
+	https://github.com/bertrik/pm1006
+
     --------------------------------------------------------------------------------
 
     Copyright (c) 2021 Tim Hagemann / way2.net Services
@@ -35,47 +39,170 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <cstring>
 #include "freertos/FreeRTOS.h"
+#include "driver/uart.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
+#include "esp_task_wdt.h"
 
 #include "vindriktning.h"
 
-/*
+////////////////////////////////////////////////////////////////////////////////////////
+
+#define BUF_SIZE (1024)
+#define STACK_SIZE (2048)
+#define DATAGRAM_LEN 30
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-// some code defines
+static const char *TAG = "vindriktning";
 
-// ---- HGT: chaged to 50 us (from 2) as our line length is too huge (5m STP)
-
-#define SHT1x_DELAY ets_delay_us(50);
-
-// ---- Macros to toggle port state of SCK line
-
-#define SHT1x_SCK_LO	gpio_set_level(m_SHT1x_pin_sck, 0)
-
-#define SHT1x_SCK_HI	gpio_set_level(m_SHT1x_pin_sck, 1)
-
-#define SHT1x_DATA_LO 	gpio_set_level(m_SHT1x_pin_data, 0);\
-						gpio_set_direction(m_SHT1x_pin_data,GPIO_MODE_OUTPUT)
-
-#define	SHT1x_DATA_HI 	gpio_set_direction(m_SHT1x_pin_data,GPIO_MODE_INPUT)
-
-#define SHT1x_GET_BIT 	gpio_get_level(m_SHT1x_pin_data)
-
-*/
 ////////////////////////////////////////////////////////////////////////////////////////
 
-static const char *TAG = "ESP32_vindriktning";
+// --- this is a debug stub "sending" a valid message for test purposes
 
+uint8_t g_TestMessage[] = { 0x16, 0x11, 0x0b, 0x00,0x00,0x03,0xe8,0x00,0x00,0x07,0xd0,0x00,0x00,0x0B,0xb8,0x00,0x00,0x00,0x00,0x49};
+
+int stub_uart_read_bytes(uart_port_t uart_num, void* buf, uint32_t length, TickType_t ticks_to_wait)
+{
+	assert(length >= sizeof(g_TestMessage));
+
+	memcpy(buf,g_TestMessage,sizeof(g_TestMessage));
+
+	return sizeof(g_TestMessage);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+typedef enum {
+    PM1006_HEADER,
+    PM1006_LENGTH,
+    PM1006_DATA,
+    PM1006_CHECK
+} pm1006_state_t;
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+class CReceiver
+{
+
+public:
+
+	CReceiver(void)
+	{
+		_state 		= PM1006_HEADER;
+		_rxlen 		= 0;
+		_index 		= 0;
+		_checksum 	= 0;		
+
+		memset(_rxbuf, 0, sizeof(_rxbuf));
+	}
+
+	// --------------------------------------------
+
+	void dump(void)
+	{
+		char l_s[100];
+
+		strcpy(l_s,"Buffer:");
+
+		for (int i=0;i<_rxlen;++i)
+		{
+			char l_buf[5];
+			snprintf(l_buf,5,"%0x ",_rxbuf[i]);
+			strcat(l_s,l_buf);
+		}
+		ESP_LOGI(TAG, "%s",l_s); 
+
+	}
+
+	// --------------------------------------------
+
+	bool process_rx(uint8_t c)
+	{
+		//ESP_LOGI(TAG, "process_rx(%x): IN state %d checksum %d _rxlen %d index %d",c,_state,_checksum,_rxlen,_index);
+
+		switch (_state) {
+		case PM1006_HEADER:
+			_checksum = c;
+			if (c == 0x16) {
+				_state = PM1006_LENGTH;
+			}
+			break;
+
+		case PM1006_LENGTH:
+			_checksum += c;
+			if (c <= sizeof(_rxbuf)) {
+				_rxlen = c;
+				_index = 0;
+				_state = (_rxlen > 0) ? PM1006_DATA : PM1006_CHECK;
+			} 
+			else 
+			{
+				ESP_LOGE(TAG, "process_rx(%x): message too long for buffer!",c);
+				_state = PM1006_HEADER;
+			}
+			break;
+
+		case PM1006_DATA:
+			_checksum += c;
+			_rxbuf[_index++] = c;
+			if (_index == _rxlen) {
+				_state = PM1006_CHECK;
+			}
+			break;
+
+		case PM1006_CHECK:
+			_checksum += c;
+			_state = PM1006_HEADER;
+	
+			if (_checksum) ESP_LOGE(TAG, "process_rx(%x): checksum error. Expected 0, got %x",c,_checksum);
+
+			//ESP_LOGI(TAG, "process_rx(%x): OUT state %d checksum %d _rxlen %d index %d",c,_state,_checksum,_rxlen,_index);
+
+			return (_checksum == 0);
+
+		default:
+			_state = PM1006_HEADER;
+			break;
+		}
+
+		//ESP_LOGI(TAG, "process_rx(%x): OUT state %d checksum %d _rxlen %d index %d",c,_state,_checksum,_rxlen,_index);
+
+		return false;
+	}
+
+	// --------------------------------------------
+
+	uint8_t GetByte(int f_idx)
+	{
+		assert(f_idx < DATAGRAM_LEN);
+		
+		return _rxbuf[f_idx];
+	}
+
+	// --------------------------------------------
+
+    pm1006_state_t 	_state;
+    size_t 			_rxlen;
+    size_t 			_index;
+    uint8_t 		_rxbuf[DATAGRAM_LEN];
+    uint8_t 		_checksum;
+ 
+};
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 
 CVindriktning::CVindriktning(void)
 {
 	m_Initialized		= false;
 
-	m_pin_data	= (gpio_num_t)0;
+	m_pin_data			= (gpio_num_t)0;
+	m_uart 				= (uart_port_t)0;
 	
 	m_pm1				= 0;
 	m_pm2				= 0;
@@ -84,316 +211,88 @@ CVindriktning::CVindriktning(void)
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-/*
-bool CVindriktning::SHT1x_InitPins(void) 
+static void uart_task(void *arg)
 {
-		
-	esp_err_t l_err;
-	// --- Reset gpios to default state (select gpio function, enable pullup and disable input and output).
-
-	gpio_reset_pin(m_SHT1x_pin_sck);
-	gpio_reset_pin(m_SHT1x_pin_data);
-
-	// --- SCK line as output but set to low first
-
-	l_err = gpio_set_level(m_SHT1x_pin_sck, 0);
-	if (l_err != ESP_OK) { ESP_LOGE(TAG,"SHT1x_InitPins error on gpio_set_level for SCK"); return false; }
-
-	l_err = gpio_set_direction(m_SHT1x_pin_sck,GPIO_MODE_OUTPUT);
-	if (l_err != ESP_OK) { ESP_LOGE(TAG, "SHT1x_InitPins error on gpio_set_direction for SCK"); return false; }
-
-	l_err = gpio_set_level(m_SHT1x_pin_sck, 0);
-	if (l_err != ESP_OK) { ESP_LOGE(TAG, "SHT1x_InitPins error on gpio_set_level for SCK"); return false; }
-
-	// --- how it works for SHT1x_pin_data: set PORT to 0 => pull data line low by setting port as output
-
-	// --- floating means - no pullup and no pulldown - so we need the one on the breakout board 
-
-	l_err = gpio_set_pull_mode(m_SHT1x_pin_data,GPIO_FLOATING);
-	if (l_err != ESP_OK) { ESP_LOGE(TAG, "SHT1x_InitPins error on gpio_set_pull_mode for DATA"); return false; }
-
-	// --- configure data output and set to low
-
-	l_err = gpio_set_direction(m_SHT1x_pin_data,GPIO_MODE_OUTPUT);
-	if (l_err != ESP_OK) { ESP_LOGE(TAG, "SHT1x_InitPins error on gpio_set_direction for DATA"); return false; }
-
-	l_err = gpio_set_level(m_SHT1x_pin_sck, 0);
-	if (l_err != ESP_OK) { ESP_LOGE(TAG, "SHT1x_InitPins error on gpio_set_level for DATA"); return false; }
-
-	m_Initialized	= true;
-
-	return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-bool SHT1x::SHT1x_Reset(void) 
-{
-	return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-void SHT1x::SHT1x_Transmission_Start(void) 
-{
-	assert(m_Initialized);
-
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-unsigned char SHT1x::SHT1x_Readbyte(bool send_ack) 
-{
-	unsigned char mask;
-	unsigned char value = 0;
-
-	// SCK is low here !
-	for(mask=0x80; mask; mask >>= 1 )
-	{
-		SHT1x_SCK_HI;	SHT1x_DELAY;  	// SCK hi
-		if( SHT1x_GET_BIT != 0 )  	// and read data
-			value |= mask;
-
-		SHT1x_SCK_LO;	SHT1x_DELAY; // SCK lo => sensor puts new data
-	}
-
-	// send ACK if required 
-	if ( send_ack )
-	{
-		SHT1x_DATA_LO;	SHT1x_DELAY; // Get DATA line
-	}
+	CVindriktning 	*l_this = (CVindriktning *)arg;
 	
-	SHT1x_SCK_HI;	SHT1x_DELAY;    // give a clock pulse
-	SHT1x_SCK_LO;	SHT1x_DELAY; 
-	
-	if ( send_ack )
-	{       // Release DATA line
-		SHT1x_DATA_HI;	SHT1x_DELAY; 
-	}
+	// ---- local instance of our shifter for the datagram
 
-	return value;
-}
+	CReceiver l_receiver;
 
-////////////////////////////////////////////////////////////////////////////////////////
+	// ---- tell the monitor where we are 
 
-bool SHT1x::SHT1x_Sendbyte( unsigned char value) 
-{
-	unsigned char mask;
-	bool ack;
+	ESP_LOGI(TAG,"UART read task started for uart %d on GPIO pin %d", l_this->GetUart(), l_this->GetDataPin());
 
-	for(mask = 0x80; mask; mask>>=1)
+    // --- Configure a temporary buffer for the incoming data
+
+    uint8_t *l_data = (uint8_t *) malloc(BUF_SIZE);
+	assert(l_data);
+
+	// --- never ending loop 
+
+	while (1) 
 	{
-		SHT1x_SCK_LO;	SHT1x_DELAY;
+        // --- Read data from the UART. This might be one or more bytes in the middle of a datagram
 
-		if( value & mask )
-		{  
-			SHT1x_DATA_HI; 	SHT1x_DELAY;
-		}
-		else
+        int len = uart_read_bytes(l_this->GetUart(), l_data, BUF_SIZE, 20 / portTICK_RATE_MS);
+
+		// --- add them to the shifter
+
+		for (int i=0;i < len;++i)
 		{
-			SHT1x_DATA_LO;	SHT1x_DELAY;
+			//ESP_LOGI(TAG, "received byte %x",l_data[i]);
+
+			if (l_receiver.process_rx(l_data[i]))
+			{
+					// --- header and length are not stored in the receiver. We start with "0x0B" --> idx0, DF1 --> idx 1
+
+					const uint16_t pm25 = (l_receiver.GetByte(3) << 8) | l_receiver.GetByte(4);
+					const uint16_t pm1  = (l_receiver.GetByte(7) << 8) | l_receiver.GetByte(8);
+					const uint16_t pm10 = (l_receiver.GetByte(11) << 8) | l_receiver.GetByte(12);
+
+					ESP_LOGI(TAG, "Datagram valid pm25 %d pm1 %d pm10 %d",pm25,pm1,pm10);
+
+					//l_receiver.dump();
+
+					l_this->SetValues(pm25,pm1,pm10);
+			}
 		}
 
-		SHT1x_SCK_HI;	SHT1x_DELAY;  // SCK hi => sensor reads data
-	}
-	SHT1x_SCK_LO;	SHT1x_DELAY;
+		vTaskDelay(3000 / portTICK_PERIOD_MS);
 
-	// Release DATA line
-	SHT1x_DATA_HI;	SHT1x_DELAY;
-	SHT1x_SCK_HI;	SHT1x_DELAY;
-
-	ack = false;
-
-	if(!SHT1x_GET_BIT)
-		ack = true;
-
-	SHT1x_SCK_LO;	SHT1x_DELAY;
-
-	SHT1x_Crc_Check(value);   // crc calculation
-
-	return ack;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-bool SHT1x::SHT1x_Measure_Start(SHT1xMeasureType type) 
-{
-	assert(m_Initialized);
-
-	// send a transmission start and reset crc calculation
-	SHT1x_Transmission_Start();
-	// send command. Crc gets updated!
-	return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-bool SHT1x::SHT1x_Get_Measure_Value(unsigned short int * value ) 
-{
-	unsigned char * chPtr = (unsigned char*) value;
-	unsigned char checksum;
-	unsigned char delay_count=62;  // delay is 62 * 5ms 
-
-	assert(m_Initialized);
-
-	// Wait for measurement to complete (DATA pin gets LOW) 
-	// Raise an error after we waited 250ms without success (210ms + 15%) 
-	while( SHT1x_GET_BIT )
-	{
-		ets_delay_us(5000);			// $$$$$$$$$$$$$$$$$$ 1 ms not working $$$$$$$$$$$$$$$$$$$$$$$$
-	
-		delay_count--;
-		if (delay_count == 0)
-		{
-			ESP_LOGE(TAG, "Timeout in SHT1x_Get_Measure_Value for Sensor with SCLK %d and DATA %d", (int)m_SHT1x_pin_sck,(int)m_SHT1x_pin_data);
-			return false;
-		}
-			
-	}
-
-	*(chPtr + 1) = SHT1x_Readbyte(true);  // read hi byte
-	SHT1x_Crc_Check(*(chPtr + 1));  		// crc calculation
-	*chPtr = SHT1x_Readbyte(true);    	// read lo byte
-	SHT1x_Crc_Check(*chPtr);    			// crc calculation
-
-	checksum = SHT1x_Readbyte(false);   // crc calculation
-
-	if (SHT1x_Mirrorbyte( checksum ) == m_SHT1x_crc)
-	{
-		return true;
-	}
-	else
-	{
-		ESP_LOGE(TAG, "CRC error in SHT1x_Get_Measure_Value for Sensor with SCLK %d and DATA %d", (int)m_SHT1x_pin_sck,(int)m_SHT1x_pin_data);
-		return false;
-	}
+    }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-void SHT1x::SHT1x_Calc(unsigned short int p_humidity ,unsigned short int p_temperature)
-{
-	const float C1=-2.0468;            		// for 12 Bit
-	const float C2=+0.0367;           		// for 12 Bit
-	const float C3=-0.0000015955;      		// for 12 Bit
-	const float T1=+0.01;             		// for 12 Bit
-	const float T2=+0.00008;           		// for 12 Bit
-
-	const float	D1 = -39.66;			// For 3.3 Volt power supply, Centigrade
-	const float	D2 = 0.01;			// For 14 Bit temperature, Centigrade
-
-	float rh = p_humidity;             		// rh:      Humidity [Ticks] 12 Bit 
-	float t = p_temperature;          		// t:       Temperature [Ticks] 14 Bit
-	float rh_lin;                     		// rh_lin:  Humidity linear
-	float rh_true;                    		// rh_true: Temperature compensated humidity
-	float t_C;                        		// t_C   :  Temperature [C]
-
-	t_C = D1 + (D2 * t);                  		// calc. temperature from ticks to [C]
-	rh_lin = C1 + (C2 * rh) + (C3 * rh * rh);	// calc. humidity from ticks to [%RH]
-	rh_true = (t_C - 25) *(T1 + (T2 * rh)) + rh_lin;// calc. temperature compensated humidity [%RH]
-	if(rh_true>100) rh_true=100;       		// cut if the value is outside of
-	if(rh_true<0.1)	rh_true=0.1;       		// the physical possible range
-
-	m_temp 	= t_C;               			// return temperature [C]
-	m_rh 	= rh_true;              		// return humidity[%RH]
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
-
-float SHT1x::SHT1x_CalcDewpoint(float fRH ,float fTemp)
-{
-	// Set some constants for the temperature range
-	float Tn = 243.12;
-	float m = 17.62;
-	if (fTemp < 0)
-	{
-		Tn = 272.62;
-		m = 22.46;
-	}
-	float lnRH = log(fRH/100);
-	float mTTnT = (m * fTemp)/(Tn+fTemp);
-	
-	return (float)(Tn * ((lnRH + mTTnT)/(m - lnRH - mTTnT)));
-}
-*/
-
-/*
-////////////////////////////////////////////////////////////////////////////////////////
-
-float SHT1x::SHT1x_CalcAbsHumidity(float r ,float T)
-{
-	// --- this function returns the absolute humidity in g/m3 for r in % and T in °C
-*/
-	/*
-	
-	Bezeichnungen:
-	
-	r = relative Luftfeuchte
-	T = Temperatur in °C
-	TK = Temperatur in Kelvin (TK = T + 273.15)
-	TD = Taupunkttemperatur in °C
-	DD = Dampfdruck in hPa
-	SDD = Sättigungsdampfdruck in hPa
-
-	Parameter:
-	a = 7.5, b = 237.3 für T >= 0
-	a = 7.6, b = 240.7 für T < 0 über Wasser (Taupunkt)
-	a = 9.5, b = 265.5 für T < 0 über Eis (Frostpunkt)
-
-	R* = 8314.3 J/(kmol*K) (universelle Gaskonstante)
-	mw = 18.016 kg/kmol (Molekulargewicht des Wasserdampfes)
-	AF = absolute Feuchte in g Wasserdampf pro m3 Luft
-
-	Formeln:
-
-	SDD(T) = 6.1078 * 10^((a*T)/(b+T))
-
-	DD(r,T) = r/100 * SDD(T)
-
-	r(T,TD) = 100 * SDD(TD) / SDD(T)
-
-	TD(r,T) = b*v/(a-v) mit v(r,T) = log10(DD(r,T)/6.1078)
-
-	AF(r,TK) = 10^5 * mw/R* * DD(r,T)/TK; AF(TD,TK) = 10^5 * mw/R* * SDD(TD)/TK
-
-	*/
-	/*
-	float a,b;
-	if (T < 0)
-	{
-		a = 7.6;
-		b = 240.7;
-	}
-	else
-	{
-		a = 7.5;
-		b = 237.3;
-	}
-
-	float SDD 	= 6.1078 * pow(10,((a*T)/(b+T)));
-	float DD 	= r/100 * SDD;
-	float TK 	= T + 273.15;
-
-	float AF = 100000 * 18.016/8314.3 * DD/TK; 
-	
-	return AF;
-}
-*/
-////////////////////////////////////////////////////////////////////////////////////////
-
-bool CVindriktning::SetupSensor(gpio_num_t f_data)
+bool CVindriktning::SetupSensor(gpio_num_t f_data,uart_port_t f_uart)
 {
 	m_pin_data	= f_data;
+	m_uart		= f_uart;
 
-	// --- set hardware pins
+	ESP_LOGI(TAG,"Setting up sensor on uart %d on GPIO pin %d", GetUart(), GetDataPin());
 
-	//SHT1x_InitPins();
-	
-	// --- Reset the SHT1x
+    // --- Configure parameters of an UART driver, communication pins and install the driver 
 
-	//SHT1x_Reset();
+    uart_config_t uart_config = {
+        .baud_rate = 9600,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
+    };
+
+    ESP_ERROR_CHECK(uart_driver_install(m_uart, BUF_SIZE * 2, 0, 0, NULL, 0));
+    ESP_ERROR_CHECK(uart_param_config(m_uart, &uart_config));
+    ESP_ERROR_CHECK(uart_set_pin(m_uart, UART_PIN_NO_CHANGE, m_pin_data, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+	// --- now start a free rtos task to receive the sensor data
+
+    xTaskCreate(uart_task, "CVindriktning__uart_task", STACK_SIZE, this, 10, NULL);
+
+	m_Initialized = true;
 
 	return true;
 }
@@ -402,11 +301,7 @@ bool CVindriktning::SetupSensor(gpio_num_t f_data)
 
 bool CVindriktning::PerformMeasurement(void)
 {
-	m_pm2 = rand() % 1000;
-	m_pm1 = rand() % 1000;
-	m_pm10 = rand() % 1000;
-
-	ESP_LOGE(TAG, "SCVindriktning stub implementation generating random values");
+	// ---- do nothing here. Values are populated asynchronously 
 
 	return true;
 }

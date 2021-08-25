@@ -63,8 +63,7 @@ public:
 
     bool IsBootstrapActivated(void)
     {
-        //return gpio_get_level(m_bootstrappin) == 0;
-        return false;
+        return gpio_get_level(m_bootstrappin) == 0;
     }
 
     void SetInfoPin(bool f_value)
