@@ -1,4 +1,4 @@
-# ESPDustLogger
+# ESPDustLogger (DEPRECRATED - Please use ESPLogger instead)
 
 ESP32 based IoT Device for air quality logging featuring an MQTT client and REST API acess. Works in conjunction with a [VINDRIKTNING](https://www.ikea.com/de/de/p/vindriktning-luftqualitaetssensor-70498242/) air sensor from IKEA.
     
